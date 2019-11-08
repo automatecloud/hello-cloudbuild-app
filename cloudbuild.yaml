@@ -31,6 +31,19 @@ steps:
   - 'gcr.io/$PROJECT_ID/hello-cloudbuild:$SHORT_SHA'
   - '.'
 
+# Twistcli Scan before it is pushed to the registry
+- name: 'gcr.io/$PROJECT_ID/cloud-build-twistcli'
+  args: ['/twistcli.sh','gcr.io/$PROJECT_ID/hello-cloudbuild:$SHORT_SHA']
+  id: Scan
+  env:
+  - 'TL_USER=$_TWISTLOCK_USER'
+  - 'VULN_THRESHOLD=$_VULNERABILITY_THRESHOLD'
+  - 'COMP_THRESHOLD=$_COMPLIANCE_THRESHOLD'
+  - 'PROJECT_NAME=$_PROJECT_NAME'
+  secretEnv:
+  - 'TL_PASS'
+  - 'TL_CONSOLE_URL'
+
 # This step pushes the image to Container Registry
 # The PROJECT_ID and SHORT_SHA variables are automatically
 # replaced by Cloud Build.
@@ -39,4 +52,23 @@ steps:
   args:
   - 'push'
   - 'gcr.io/$PROJECT_ID/hello-cloudbuild:$SHORT_SHA'
+
+substitutions:
+    _TWISTLOCK_USER: 'cloud-build'
+    _VULNERABILITY_THRESHOLD: 'critical'
+    _COMPLIANCE_THRESHOLD: 'critical'
+    _PROJECT_NAME: 'none'
+
+images:
+- 'gcr.io/$PROJECT_ID/hello-cloudbuild:$SHORT_SHA'
+
+secrets:
+- kmsKeyName: projects/$PROJECT_ID/locations/global/keyRings/cloud-build/cryptoKeys/console
+  secretEnv:
+    TL_CONSOLE_URL: <ADD YOUR KEY HERE>
+- kmsKeyName: projects/$PROJECT_ID/locations/global/keyRings/cloud-build/cryptoKeys/password
+  secretEnv:
+    TL_PASS: <ADD YOUR KEY HERE>
+
+
 # [END cloudbuild]
